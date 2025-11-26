@@ -1,6 +1,14 @@
+@import url("https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
+@theme {
+  /* Fonts */
+  --font-family-sans: "Comfortaa", sans-serif;
+  --font-family-mono: "Montserrat", sans-serif;
+}
+
 /* Light theme (default) */
+:root,
 [data-theme="light"] {
   --background: #f8f9fa;
   --foreground: #212529;
@@ -27,7 +35,7 @@
   /* Semantic colors */
   --success: #38b000;
   --warning: #f77f00;
-  --neutral: #e0e0e0;
+  --neutral: #424242;
 }
 
 @theme inline {
@@ -43,14 +51,58 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-neutral: var(--neutral);
+}
 
-  /* Fonts */
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Smooth transitions for all elements using theme colors */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Comfortaa", sans-serif;
+  padding-bottom: 80px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Montserrat", sans-serif;
+}
+
+/* SweetAlert2 Theme Customization */
+.swal2-popup.swal2-dark {
+  border: 1px solid #424242;
+}
+
+.swal2-popup.swal2-light {
+  border: 1px solid #e0e0e0;
+}
+
+.swal2-popup {
+  font-family: "Comfortaa", sans-serif;
+  border-radius: 1rem;
+}
+
+.swal2-icon.swal2-info {
+  border-color: #00b4d8 !important;
+  color: #00b4d8 !important;
+}
+
+.swal2-styled.swal2-confirm {
+  border-radius: 9999px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.swal2-styled.swal2-confirm:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 15px -3px rgba(255, 107, 53, 0.3);
 }

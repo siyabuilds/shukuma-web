@@ -1,6 +1,6 @@
 "use client";
 
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/contexts/ThemeContext";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
 export function ThemeToggle() {

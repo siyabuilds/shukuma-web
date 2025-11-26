@@ -9,8 +9,6 @@ export function useTheme() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-
     // Check for saved theme preference or default to 'light'
     const savedTheme = localStorage.getItem("theme") as Theme | null;
     const prefersDark = window.matchMedia(
@@ -20,6 +18,7 @@ export function useTheme() {
     const initialTheme = savedTheme || (prefersDark ? "dark" : "light");
     setTheme(initialTheme);
     document.documentElement.setAttribute("data-theme", initialTheme);
+    setMounted(true);
   }, []);
 
   const toggleTheme = () => {
