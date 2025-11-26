@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Swal from "sweetalert2";
 import { useTheme } from "@/contexts/ThemeContext";
+import ExerciseFlipCard from "@/components/ExerciseFlipCard";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
 interface Exercise {
@@ -137,20 +138,76 @@ export default function DailyPage() {
     });
 
     if (result.isConfirmed) {
-      // TODO: Implement progress tracking API
-      await Swal.fire({
-        title:
-          '<i class="fas fa-trophy" style="color: #38b000;"></i> Great Job!',
-        text: "Workout completed successfully! 💪",
-        icon: "success",
-        timer: 2000,
-        showConfirmButton: false,
-        background: isDark ? "#1e1e1e" : "#f8f9fa",
-        color: isDark ? "#eaeaea" : "#212529",
-        customClass: {
-          popup: isDark ? "swal2-dark" : "swal2-light",
-        },
-      });
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          router.push("/login");
+          return;
+        }
+
+        const progressData = {
+          exerciseId: exercise._id,
+          completedReps: exercise.reps || 0,
+          completedSeconds: exercise.duration || 0,
+          notes: "Completed daily workout",
+        };
+
+        const response = await fetch("/api/progress", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(progressData),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          await Swal.fire({
+            title:
+              '<i class="fas fa-trophy" style="color: #38b000;"></i> Great Job!',
+            text: "Workout completed successfully! 💪",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            background: isDark ? "#1e1e1e" : "#f8f9fa",
+            color: isDark ? "#eaeaea" : "#212529",
+            customClass: {
+              popup: isDark ? "swal2-dark" : "swal2-light",
+            },
+          });
+
+          // Redirect to home or progress page
+          router.push("/progress");
+        } else {
+          await Swal.fire({
+            title:
+              '<i class="fas fa-exclamation-triangle" style="color: #ff6b35;"></i> Error',
+            text: data.message || "Failed to complete workout",
+            icon: "error",
+            background: isDark ? "#1e1e1e" : "#f8f9fa",
+            color: isDark ? "#eaeaea" : "#212529",
+            customClass: {
+              popup: isDark ? "swal2-dark" : "swal2-light",
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Error completing workout:", error);
+        await Swal.fire({
+          title:
+            '<i class="fas fa-exclamation-triangle" style="color: #ff6b35;"></i> Error',
+          text: "Network error. Please try again.",
+          icon: "error",
+          background: isDark ? "#1e1e1e" : "#f8f9fa",
+          color: isDark ? "#eaeaea" : "#212529",
+          customClass: {
+            popup: isDark ? "swal2-dark" : "swal2-light",
+          },
+        });
+      }
     }
   };
 
@@ -243,7 +300,7 @@ export default function DailyPage() {
         </div>
 
         {/* Exercise Card */}
-        <div className="bg-background border border-neutral rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-background border border-neutral rounded-2xl shadow-xl overflow-hidden mb-8">
           {/* Exercise Header */}
           <div className="bg-primary/10 p-6 border-b border-neutral">
             <div className="flex items-start justify-between">
@@ -288,7 +345,7 @@ export default function DailyPage() {
             </div>
           </div>
 
-          {/* Exercise Details */}
+          {/* Exercise Details - Side by side on desktop, stacked on mobile */}
           <div className="p-8">
             {/* Duration or Reps */}
             <div className="mb-8">
@@ -319,38 +376,62 @@ export default function DailyPage() {
               )}
             </div>
 
-            {/* Description */}
-            {exercise.description && (
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-foreground mb-3 flex items-center gap-2">
-                  <i className="fas fa-info-circle text-primary"></i>
-                  Description
-                </h3>
-                <p className="text-foreground/70 leading-relaxed text-lg">
-                  {exercise.description}
-                </p>
-              </div>
-            )}
+            {/* Description and Flip Card - Desktop: Side by side, Mobile: Stacked */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              {/* Description Section */}
+              <div className="space-y-6">
+                {exercise.description && (
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground mb-3 flex items-center gap-2">
+                      <i className="fas fa-info-circle text-primary"></i>
+                      Description
+                    </h3>
+                    <p className="text-foreground/70 leading-relaxed text-lg">
+                      {exercise.description}
+                    </p>
+                  </div>
+                )}
 
-            {/* Demonstration Link */}
-            {exercise.demonstration && (
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-foreground mb-3 flex items-center gap-2">
-                  <i className="fas fa-video text-primary"></i>
-                  Demonstration
-                </h3>
-                <a
-                  href={exercise.demonstration}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-secondary text-white px-6 py-3 rounded-lg font-semibold hover:bg-secondary/90 transition-all duration-300 hover:shadow-lg"
-                >
-                  <i className="fas fa-play-circle"></i>
-                  Watch Tutorial
-                  <i className="fas fa-external-link-alt text-sm"></i>
-                </a>
+                {/* Tips on desktop */}
+                <div className="hidden lg:block bg-primary/5 border border-primary/20 rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                    <i className="fas fa-lightbulb text-warning"></i>
+                    Quick Tips
+                  </h4>
+                  <ul className="space-y-2 text-foreground/70 text-sm">
+                    <li className="flex items-start gap-2">
+                      <i className="fas fa-check text-success mt-0.5 text-xs"></i>
+                      <span>Focus on proper form</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <i className="fas fa-check text-success mt-0.5 text-xs"></i>
+                      <span>Stay hydrated</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <i className="fas fa-check text-success mt-0.5 text-xs"></i>
+                      <span>Breathe steadily</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
-            )}
+
+              {/* Flip Card for Demonstration */}
+              <div>
+                <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                  <i className="fas fa-image text-primary"></i>
+                  Exercise Demonstration
+                </h3>
+                <ExerciseFlipCard
+                  name={exercise.name}
+                  description={exercise.description}
+                  type={exercise.type}
+                  difficulty={exercise.difficulty}
+                  demonstration={exercise.demonstration}
+                  duration={exercise.duration}
+                  reps={exercise.reps}
+                />
+              </div>
+            </div>
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-neutral">

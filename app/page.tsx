@@ -4,15 +4,49 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
+interface ProgressSummary {
+  totalCompleted: number;
+  streak: number;
+}
+
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<ProgressSummary | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
     setLoading(false);
+
+    // Fetch stats if logged in
+    if (token) {
+      fetchStats(token);
+    }
   }, []);
+
+  const fetchStats = async (token: string) => {
+    setStatsLoading(true);
+    try {
+      const response = await fetch("/api/progress/summary", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -87,20 +121,34 @@ export default function Home() {
             <h2 className="text-3xl font-bold text-foreground mb-6">
               Quick Stats
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-primary mb-2">0</div>
-                <p className="text-foreground/70">Workouts Completed</p>
+            {statsLoading ? (
+              <div className="text-center py-8">
+                <i className="fas fa-circle-notch fa-spin text-primary text-3xl"></i>
               </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-secondary mb-2">0</div>
-                <p className="text-foreground/70">Days Active</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-primary mb-2">
+                    {stats?.totalCompleted || 0}
+                  </div>
+                  <p className="text-foreground/70">Workouts Completed</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-secondary mb-2">
+                    {stats?.streak || 0}
+                  </div>
+                  <p className="text-foreground/70">Day Streak</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-success mb-2">
+                    {stats?.totalCompleted
+                      ? Math.floor(stats.totalCompleted / 7)
+                      : 0}
+                  </div>
+                  <p className="text-foreground/70">Weeks Active</p>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-success mb-2">0</div>
-                <p className="text-foreground/70">Personal Records</p>
-              </div>
-            </div>
+            )}
           </div>
         </main>
       </div>
