@@ -24,8 +24,8 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
-    router.push("/");
     setIsOpen(false);
+    window.location.href = "/";
   };
 
   const authenticatedLinks = [
@@ -36,7 +36,6 @@ export default function Navbar() {
   ];
 
   const unauthenticatedLinks = [
-    { name: "Home", href: "/" },
     { name: "Login", href: "/login" },
     { name: "Register", href: "/register" },
   ];

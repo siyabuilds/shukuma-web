@@ -60,7 +60,7 @@ export default function LoginPage() {
           },
         });
 
-        router.push("/daily");
+        window.location.href = "/";
       } else {
         const isDark = theme === "dark";
         Swal.fire({
