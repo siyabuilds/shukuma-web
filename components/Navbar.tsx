@@ -1,24 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-
-const navLinks = [
-  { name: "Home", href: "/" },
-  { name: "Exercises", href: "/exercises" },
-  { name: "Daily", href: "/daily" },
-  { name: "Progress", href: "/progress" },
-  { name: "Login", href: "/login" },
-  { name: "Register", href: "/register" },
-];
+import { useRouter } from "next/navigation";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    router.push("/");
+    setIsOpen(false);
+  };
+
+  const authenticatedLinks = [
+    { name: "Home", href: "/" },
+    { name: "Exercises", href: "/exercises" },
+    { name: "Daily", href: "/daily" },
+    { name: "Progress", href: "/progress" },
+  ];
+
+  const unauthenticatedLinks = [
+    { name: "Home", href: "/" },
+    { name: "Login", href: "/login" },
+    { name: "Register", href: "/register" },
+  ];
+
+  const navLinks = isLoggedIn ? authenticatedLinks : unauthenticatedLinks;
 
   return (
     <nav className="bg-background shadow-lg sticky top-0 z-50 border-b border-neutral">
@@ -42,6 +65,15 @@ export default function Navbar() {
                 {link.name}
               </Link>
             ))}
+            {isLoggedIn && (
+              <button
+                onClick={handleLogout}
+                className="text-foreground hover:text-primary px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center gap-2"
+              >
+                <i className="fas fa-sign-out-alt"></i>
+                Logout
+              </button>
+            )}
           </div>
 
           {/* Hamburger Button */}
@@ -114,6 +146,22 @@ export default function Navbar() {
                   </Link>
                 </motion.div>
               ))}
+              {isLoggedIn && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2, delay: navLinks.length * 0.05 }}
+                >
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left text-foreground hover:text-primary hover:bg-neutral px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 flex items-center gap-2"
+                  >
+                    <i className="fas fa-sign-out-alt"></i>
+                    Logout
+                  </button>
+                </motion.div>
+              )}
             </motion.div>
           </motion.div>
         )}
