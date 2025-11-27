@@ -69,7 +69,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Daily Exercise Card */}
             <Link href="/daily">
               <div className="bg-background border border-neutral rounded-2xl p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
@@ -111,6 +111,21 @@ export default function Home() {
                 </h3>
                 <p className="text-foreground/70">
                   View your fitness journey and achievements
+                </p>
+              </div>
+            </Link>
+
+            {/* Community Card */}
+            <Link href="/community">
+              <div className="bg-background border border-neutral rounded-2xl p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-warning/10 rounded-full mb-4">
+                  <i className="fas fa-users text-warning text-2xl"></i>
+                </div>
+                <h3 className="text-2xl font-bold text-foreground mb-2">
+                  Community
+                </h3>
+                <p className="text-foreground/70">
+                  Connect with friends and share your progress
                 </p>
               </div>
             </Link>
