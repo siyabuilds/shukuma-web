@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Swal from "sweetalert2";
+import { showAlert, showConfirm } from "@/utils/swal";
 import { useTheme } from "@/contexts/ThemeContext";
 import ExerciseFlipCard from "@/components/ExerciseFlipCard";
 import "@fortawesome/fontawesome-free/css/all.min.css";
@@ -118,24 +118,12 @@ export default function DailyPage() {
   };
 
   const handleMarkComplete = async () => {
-    const isDark = theme === "dark";
-
-    const result = await Swal.fire({
-      title:
-        '<i class="fas fa-check-circle" style="color: #38b000;"></i> Complete Workout?',
-      text: "Mark today's workout as complete?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#38b000",
-      cancelButtonColor: "#424242",
-      confirmButtonText: '<i class="fas fa-check"></i> Yes, Complete!',
-      cancelButtonText: "Cancel",
-      background: isDark ? "#1e1e1e" : "#f8f9fa",
-      color: isDark ? "#eaeaea" : "#212529",
-      customClass: {
-        popup: isDark ? "swal2-dark" : "swal2-light",
-      },
-    });
+    const result = await showConfirm(
+      "Complete Workout?",
+      "Mark today's workout as complete?",
+      "Yes, Complete!",
+      "Cancel"
+    );
 
     if (result.isConfirmed) {
       try {
@@ -165,48 +153,24 @@ export default function DailyPage() {
         const data = await response.json();
 
         if (response.ok) {
-          await Swal.fire({
-            title:
-              '<i class="fas fa-trophy" style="color: #38b000;"></i> Great Job!',
-            text: "Workout completed successfully! 💪",
-            icon: "success",
-            timer: 2000,
-            showConfirmButton: false,
-            background: isDark ? "#1e1e1e" : "#f8f9fa",
-            color: isDark ? "#eaeaea" : "#212529",
-            customClass: {
-              popup: isDark ? "swal2-dark" : "swal2-light",
-            },
-          });
+          await showAlert(
+            "Great Job!",
+            "Workout completed successfully! 💪",
+            "success"
+          );
 
           // Redirect to home or progress page
           router.push("/progress");
         } else {
-          await Swal.fire({
-            title:
-              '<i class="fas fa-exclamation-triangle" style="color: #ff6b35;"></i> Error',
-            text: data.message || "Failed to complete workout",
-            icon: "error",
-            background: isDark ? "#1e1e1e" : "#f8f9fa",
-            color: isDark ? "#eaeaea" : "#212529",
-            customClass: {
-              popup: isDark ? "swal2-dark" : "swal2-light",
-            },
-          });
+          await showAlert(
+            "Error",
+            data.message || "Failed to complete workout",
+            "error"
+          );
         }
       } catch (error) {
         console.error("Error completing workout:", error);
-        await Swal.fire({
-          title:
-            '<i class="fas fa-exclamation-triangle" style="color: #ff6b35;"></i> Error',
-          text: "Network error. Please try again.",
-          icon: "error",
-          background: isDark ? "#1e1e1e" : "#f8f9fa",
-          color: isDark ? "#eaeaea" : "#212529",
-          customClass: {
-            popup: isDark ? "swal2-dark" : "swal2-light",
-          },
-        });
+        await showAlert("Error", "Network error. Please try again.", "error");
       }
     }
   };

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Swal from "sweetalert2";
+import { showAlert } from "@/utils/swal";
 import { useTheme } from "@/contexts/ThemeContext";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
@@ -45,51 +45,26 @@ export default function LoginPage() {
         // Store token
         localStorage.setItem("token", data.token);
 
-        const isDark = theme === "dark";
-        await Swal.fire({
-          title:
-            '<i class="fas fa-check-circle" style="color: #38b000;"></i> Success!',
-          text: "Login successful! Redirecting...",
-          icon: "success",
-          timer: 2000,
-          showConfirmButton: false,
-          background: isDark ? "#1e1e1e" : "#f8f9fa",
-          color: isDark ? "#eaeaea" : "#212529",
-          customClass: {
-            popup: isDark ? "swal2-dark" : "swal2-light",
-          },
-        });
+        await showAlert(
+          "Success!",
+          "Login successful! Redirecting...",
+          "success"
+        );
 
         window.location.href = "/";
       } else {
-        const isDark = theme === "dark";
-        Swal.fire({
-          title:
-            '<i class="fas fa-exclamation-circle" style="color: #f77f00;"></i> Error',
-          text: data.message || "Login failed. Please try again.",
-          icon: "error",
-          confirmButtonColor: "#FF6B35",
-          background: isDark ? "#1e1e1e" : "#f8f9fa",
-          color: isDark ? "#eaeaea" : "#212529",
-          customClass: {
-            popup: isDark ? "swal2-dark" : "swal2-light",
-          },
-        });
+        showAlert(
+          "Error",
+          data.message || "Login failed. Please try again.",
+          "error"
+        );
       }
     } catch (error) {
-      const isDark = theme === "dark";
-      Swal.fire({
-        title:
-          '<i class="fas fa-exclamation-triangle" style="color: #f77f00;"></i> Error',
-        text: "Network error. Please check your connection.",
-        icon: "error",
-        confirmButtonColor: "#FF6B35",
-        background: isDark ? "#1e1e1e" : "#f8f9fa",
-        color: isDark ? "#eaeaea" : "#212529",
-        customClass: {
-          popup: isDark ? "swal2-dark" : "swal2-light",
-        },
-      });
+      showAlert(
+        "Error",
+        "Network error. Please check your connection.",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
