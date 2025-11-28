@@ -19,14 +19,17 @@ export async function POST(
 
     const body = await request.json();
 
-    const response = await fetch(`${backendUrl}/api/community/comment/${postId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: authHeader,
-      },
-      body: JSON.stringify(body),
-    });
+    const response = await fetch(
+      `${backendUrl}/api/community/comment/${postId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
+        body: JSON.stringify(body),
+      }
+    );
 
     const data = await response.json();
 
@@ -64,13 +67,16 @@ export async function GET(
       );
     }
 
-    const response = await fetch(`${backendUrl}/api/community/comments/${postId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: authHeader,
-      },
-    });
+    const response = await fetch(
+      `${backendUrl}/api/community/comments/${postId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
+      }
+    );
 
     const data = await response.json();
 
