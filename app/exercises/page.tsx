@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
@@ -22,9 +23,21 @@ export default function ExercisesPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
+  const [selectedDuration, setSelectedDuration] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isShuffling, setIsShuffling] = useState(false);
+  const router = useRouter();
   const ITEMS_PER_PAGE = 13;
+
+  // Random color for shuffle button (picked once on mount)
+  const [shuffleColor] = useState(() => {
+    const colors = [
+      { bg: "bg-primary", hover: "hover:bg-primary/80" }, // Orange
+      { bg: "bg-secondary", hover: "hover:bg-secondary/80" }, // Blue
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  });
 
   useEffect(() => {
     const fetchExercises = async () => {
@@ -68,6 +81,27 @@ export default function ExercisesPage() {
       filtered = filtered.filter((ex) => ex.difficulty === selectedDifficulty);
     }
 
+    // Filter by duration
+    if (selectedDuration !== "all") {
+      filtered = filtered.filter((ex) => {
+        const duration = ex.duration || 0;
+        const reps = ex.reps || 0;
+        // Estimate time: reps * 3 seconds per rep, or actual duration
+        const estimatedTime = duration || reps * 3;
+
+        switch (selectedDuration) {
+          case "quick": // Under 30 seconds
+            return estimatedTime <= 30;
+          case "medium": // 30-60 seconds
+            return estimatedTime > 30 && estimatedTime <= 60;
+          case "long": // Over 60 seconds
+            return estimatedTime > 60;
+          default:
+            return true;
+        }
+      });
+    }
+
     // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter((ex) =>
@@ -77,7 +111,13 @@ export default function ExercisesPage() {
 
     setFilteredExercises(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [selectedType, selectedDifficulty, searchQuery, exercises]);
+  }, [
+    selectedType,
+    selectedDifficulty,
+    selectedDuration,
+    searchQuery,
+    exercises,
+  ]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredExercises.length / ITEMS_PER_PAGE);
@@ -88,6 +128,30 @@ export default function ExercisesPage() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleShuffle = async () => {
+    setIsShuffling(true);
+    try {
+      const response = await fetch("/api/exercises/random", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data._id) {
+        router.push(`/exercises/${data._id}`);
+      } else {
+        console.error("Failed to get random exercise:", data.message);
+      }
+    } catch (err) {
+      console.error("Shuffle error:", err);
+    } finally {
+      setIsShuffling(false);
+    }
   };
 
   const getTypeIcon = (type: string) => {
@@ -204,7 +268,25 @@ export default function ExercisesPage() {
 
         {/* Search and Filters */}
         <div className="bg-background border border-neutral rounded-2xl p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Shuffle Button - Prominent placement */}
+          <div className="flex justify-center mb-6">
+            <button
+              onClick={handleShuffle}
+              disabled={isShuffling}
+              className={`group relative px-8 py-4 ${shuffleColor.bg} ${shuffleColor.hover} text-white rounded-xl font-bold text-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-3`}
+            >
+              <i
+                className={`fas fa-shuffle text-2xl ${
+                  isShuffling ? "animate-spin" : "group-hover:animate-bounce"
+                }`}
+              ></i>
+              <span>
+                {isShuffling ? "Shuffling..." : "Shuffle & Pick Random"}
+              </span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
@@ -256,11 +338,30 @@ export default function ExercisesPage() {
                 <option value="hard">Hard</option>
               </select>
             </div>
+
+            {/* Duration Filter */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                <i className="fas fa-clock text-warning mr-2"></i>
+                Duration
+              </label>
+              <select
+                value={selectedDuration}
+                onChange={(e) => setSelectedDuration(e.target.value)}
+                className="w-full px-4 py-3 bg-background border border-neutral rounded-lg focus:outline-none focus:ring-2 focus:ring-warning focus:border-transparent text-foreground transition-all duration-200"
+              >
+                <option value="all">All Durations</option>
+                <option value="quick">Quick (≤30s)</option>
+                <option value="medium">Medium (30-60s)</option>
+                <option value="long">Long (60s+)</option>
+              </select>
+            </div>
           </div>
 
           {/* Active Filters Info */}
           {(selectedType !== "all" ||
             selectedDifficulty !== "all" ||
+            selectedDuration !== "all" ||
             searchQuery) && (
             <div className="mt-4 flex items-center gap-2 text-sm text-foreground/70">
               <i className="fas fa-info-circle text-primary"></i>
@@ -273,6 +374,7 @@ export default function ExercisesPage() {
                 onClick={() => {
                   setSelectedType("all");
                   setSelectedDifficulty("all");
+                  setSelectedDuration("all");
                   setSearchQuery("");
                 }}
                 className="ml-auto text-primary hover:text-primary/80 font-medium"
@@ -286,6 +388,7 @@ export default function ExercisesPage() {
           {!searchQuery &&
             selectedType === "all" &&
             selectedDifficulty === "all" &&
+            selectedDuration === "all" &&
             filteredExercises.length > ITEMS_PER_PAGE && (
               <div className="mt-4 text-sm text-foreground/70">
                 <i className="fas fa-layer-group text-secondary mr-2"></i>
@@ -310,6 +413,7 @@ export default function ExercisesPage() {
               onClick={() => {
                 setSelectedType("all");
                 setSelectedDifficulty("all");
+                setSelectedDuration("all");
                 setSearchQuery("");
               }}
               className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-all duration-300"
