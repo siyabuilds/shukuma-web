@@ -31,6 +31,15 @@ export default function ExerciseDetailPage({
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [completedToday, setCompletedToday] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
 
   useEffect(() => {
     const fetchExercise = async () => {
@@ -152,6 +161,95 @@ export default function ExerciseDetailPage({
           popup: isDark ? "swal2-dark" : "swal2-light",
         },
       });
+    }
+  };
+
+  const handleMarkComplete = async () => {
+    if (!exercise) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    const isDark = theme === "dark";
+
+    const result = await Swal.fire({
+      title:
+        '<i class="fas fa-check-circle" style="color: #38b000;"></i> Mark Complete?',
+      text: `Did you finish ${exercise.name}?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#38b000",
+      cancelButtonColor: "#424242",
+      confirmButtonText: '<i class="fas fa-check"></i> Yes, Done!',
+      cancelButtonText: "Not Yet",
+      background: isDark ? "#1e1e1e" : "#f8f9fa",
+      color: isDark ? "#eaeaea" : "#212529",
+      customClass: {
+        popup: isDark ? "swal2-dark" : "swal2-light",
+      },
+    });
+
+    if (result.isConfirmed) {
+      setCompleting(true);
+      try {
+        const response = await fetch(
+          `/api/exercises/${exercise._id}/complete`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setCompletedToday(true);
+          await Swal.fire({
+            title:
+              '<i class="fas fa-trophy" style="color: #ff6b35;"></i> Awesome!',
+            html: `<p>${data.message}</p><p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">Your daily challenge progress has been updated!</p>`,
+            icon: "success",
+            timer: 3000,
+            showConfirmButton: false,
+            background: isDark ? "#1e1e1e" : "#f8f9fa",
+            color: isDark ? "#eaeaea" : "#212529",
+            customClass: {
+              popup: isDark ? "swal2-dark" : "swal2-light",
+            },
+          });
+        } else {
+          await Swal.fire({
+            title: "Oops!",
+            text: data.message || "Failed to mark complete",
+            icon: "info",
+            background: isDark ? "#1e1e1e" : "#f8f9fa",
+            color: isDark ? "#eaeaea" : "#212529",
+            customClass: {
+              popup: isDark ? "swal2-dark" : "swal2-light",
+            },
+          });
+          if (data.message?.includes("already completed")) {
+            setCompletedToday(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error completing exercise:", error);
+        await Swal.fire({
+          title: "Error",
+          text: "Network error. Please try again.",
+          icon: "error",
+          background: isDark ? "#1e1e1e" : "#f8f9fa",
+          color: isDark ? "#eaeaea" : "#212529",
+        });
+      } finally {
+        setCompleting(false);
+      }
     }
   };
 
@@ -375,19 +473,46 @@ export default function ExerciseDetailPage({
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-neutral">
-              <button
-                onClick={handleStartWorkout}
-                className="flex-1 bg-success text-white px-8 py-4 rounded-lg font-semibold hover:bg-success/90 transition-all duration-300 hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 text-lg"
-              >
-                <i className="fas fa-play-circle text-2xl"></i>
-                Start This Workout
-              </button>
+              {isLoggedIn ? (
+                completedToday ? (
+                  <div className="flex-1 bg-success/20 text-success px-8 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 text-lg border-2 border-success">
+                    <i className="fas fa-check-circle text-2xl"></i>
+                    Completed Today!
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleMarkComplete}
+                    disabled={completing}
+                    className="flex-1 bg-success text-white px-8 py-4 rounded-lg font-semibold hover:bg-success/90 transition-all duration-300 hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {completing ? (
+                      <>
+                        <i className="fas fa-circle-notch fa-spin text-2xl"></i>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-check-circle text-2xl"></i>
+                        Mark Complete
+                      </>
+                    )}
+                  </button>
+                )
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex-1 bg-success text-white px-8 py-4 rounded-lg font-semibold hover:bg-success/90 transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2 text-lg"
+                >
+                  <i className="fas fa-sign-in-alt text-2xl"></i>
+                  Login to Track Progress
+                </Link>
+              )}
               <Link
                 href="/daily"
                 className="flex-1 bg-primary text-white px-8 py-4 rounded-lg font-semibold hover:bg-primary/90 transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2 text-lg"
               >
                 <i className="fas fa-calendar-day"></i>
-                View Today's Workout
+                View Daily Challenge
               </Link>
             </div>
           </div>
