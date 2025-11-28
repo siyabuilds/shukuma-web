@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
 export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get("authorization");
@@ -11,8 +9,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:3000";
 
-    const response = await fetch(`${API_URL}/api/daily-challenge/complete`, {
+    const response = await fetch(`${backendUrl}/api/daily-challenge/complete`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

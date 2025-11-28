@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get("authorization");
@@ -10,7 +8,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const response = await fetch(`${API_URL}/api/daily-challenge/stats`, {
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:3000";
+
+    const response = await fetch(`${backendUrl}/api/daily-challenge/stats`, {
       method: "GET",
       headers: {
         Authorization: token,

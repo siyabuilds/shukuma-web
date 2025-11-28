@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,9 +13,10 @@ export async function POST(
 
     const resolvedParams = await params;
     const exerciseId = resolvedParams.id;
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:3000";
 
     const response = await fetch(
-      `${API_URL}/api/exercises/${exerciseId}/complete`,
+      `${backendUrl}/api/exercises/${exerciseId}/complete`,
       {
         method: "POST",
         headers: {
