@@ -12,6 +12,13 @@ interface User {
   email: string;
 }
 
+interface Comment {
+  _id: string;
+  userId: User;
+  content: string;
+  createdAt: string;
+}
+
 interface Post {
   _id: string;
   userId: User;
@@ -19,6 +26,7 @@ interface Post {
   type?: string;
   meta?: any;
   likes: string[];
+  comments: Comment[];
   createdAt: string;
   updatedAt: string;
 }
@@ -65,6 +73,17 @@ export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [feedLoading, setFeedLoading] = useState(true);
   const [newPostContent, setNewPostContent] = useState("");
+
+  // Comment state
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(
+    new Set()
+  );
+  const [commentInputs, setCommentInputs] = useState<{
+    [postId: string]: string;
+  }>({});
+  const [submittingComment, setSubmittingComment] = useState<string | null>(
+    null
+  );
 
   // Friends state
   const [friends, setFriends] = useState<FriendRequest[]>([]);
@@ -295,6 +314,85 @@ export default function CommunityPage() {
       }
     } catch (err) {
       console.error("Failed to unlike post:", err);
+    }
+  };
+
+  const toggleComments = (postId: string) => {
+    setExpandedComments((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleCommentChange = (postId: string, value: string) => {
+    setCommentInputs((prev) => ({ ...prev, [postId]: value }));
+  };
+
+  const handleAddComment = async (postId: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const content = commentInputs[postId]?.trim();
+    if (!content) {
+      showAlert("Error", "Please enter a comment", "error");
+      return;
+    }
+
+    setSubmittingComment(postId);
+    try {
+      const response = await fetch(`/api/community/comment/${postId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      if (response.ok) {
+        setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
+        fetchFeed();
+      } else {
+        const data = await response.json();
+        showAlert("Error", data.message || "Failed to add comment", "error");
+      }
+    } catch (err) {
+      console.error("Failed to add comment:", err);
+      showAlert("Error", "Network error", "error");
+    } finally {
+      setSubmittingComment(null);
+    }
+  };
+
+  const handleDeleteComment = async (postId: string, commentId: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(
+        `/api/community/comment/${postId}/${commentId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        fetchFeed();
+      } else {
+        const data = await response.json();
+        showAlert("Error", data.message || "Failed to delete comment", "error");
+      }
+    } catch (err) {
+      console.error("Failed to delete comment:", err);
+      showAlert("Error", "Network error", "error");
     }
   };
 
@@ -723,7 +821,109 @@ export default function CommunityPage() {
                               {post.likes.length}
                             </span>
                           </button>
+                          <button
+                            onClick={() => toggleComments(post._id)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                              expandedComments.has(post._id)
+                                ? "bg-primary/10 text-primary"
+                                : "bg-neutral/30 text-foreground/70 hover:bg-neutral/50"
+                            }`}
+                          >
+                            <i className="far fa-comment"></i>
+                            <span className="font-semibold">
+                              {post.comments?.length || 0}
+                            </span>
+                          </button>
                         </div>
+
+                        {/* Comments Section */}
+                        {expandedComments.has(post._id) && (
+                          <div className="mt-4 pt-4 border-t border-neutral">
+                            {/* Add Comment Input */}
+                            <div className="flex gap-2 mb-4">
+                              <input
+                                type="text"
+                                value={commentInputs[post._id] || ""}
+                                onChange={(e) =>
+                                  handleCommentChange(post._id, e.target.value)
+                                }
+                                placeholder="Write a comment..."
+                                className="flex-1 px-4 py-2 bg-background border border-neutral rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+                                maxLength={500}
+                                onKeyPress={(e) => {
+                                  if (e.key === "Enter")
+                                    handleAddComment(post._id);
+                                }}
+                              />
+                              <button
+                                onClick={() => handleAddComment(post._id)}
+                                disabled={submittingComment === post._id}
+                                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                              >
+                                {submittingComment === post._id ? (
+                                  <i className="fas fa-spinner fa-spin"></i>
+                                ) : (
+                                  <i className="fas fa-paper-plane"></i>
+                                )}
+                              </button>
+                            </div>
+
+                            {/* Comments List */}
+                            {post.comments && post.comments.length > 0 ? (
+                              <div className="space-y-3 max-h-60 overflow-y-auto">
+                                {post.comments.map((comment) => (
+                                  <div
+                                    key={comment._id}
+                                    className="flex items-start gap-3 bg-neutral/20 rounded-lg p-3"
+                                  >
+                                    <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                                      <i className="fas fa-user text-secondary text-sm"></i>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Link
+                                          href={`/community/profile/${
+                                            comment.userId?.username ||
+                                            "unknown"
+                                          }`}
+                                          className="font-semibold text-foreground hover:text-primary text-sm"
+                                        >
+                                          {comment.userId?.username ||
+                                            "Unknown"}
+                                        </Link>
+                                        <span className="text-foreground/50 text-xs">
+                                          {formatDate(comment.createdAt)}
+                                        </span>
+                                      </div>
+                                      <p className="text-foreground/80 text-sm break-words">
+                                        {comment.content}
+                                      </p>
+                                    </div>
+                                    {(comment.userId?._id === currentUserId ||
+                                      post.userId._id === currentUserId) && (
+                                      <button
+                                        onClick={() =>
+                                          handleDeleteComment(
+                                            post._id,
+                                            comment._id
+                                          )
+                                        }
+                                        className="text-foreground/40 hover:text-red-500 transition-colors flex-shrink-0"
+                                        title="Delete comment"
+                                      >
+                                        <i className="fas fa-trash-alt text-xs"></i>
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-foreground/50 text-sm text-center py-2">
+                                No comments yet. Be the first to comment!
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
