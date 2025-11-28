@@ -23,6 +23,7 @@ interface ProfileData {
   friendCount: number;
   exercisesCompleted: number;
   currentStreak: number;
+  completedChallenges: number;
   friendRequestStatus:
     | "none"
     | "pending"
@@ -276,6 +277,34 @@ export default function ProfilePage({
         color: "text-secondary",
         label: "Social Butterfly",
         description: "5+ friends",
+      });
+    }
+
+    // Challenge achievements
+    if (profile.completedChallenges >= 1) {
+      badges.push({
+        icon: "fa-handshake",
+        color: "text-primary",
+        label: "Challenge Accepted",
+        description: "First challenge completed",
+      });
+    }
+
+    if (profile.completedChallenges >= 5) {
+      badges.push({
+        icon: "fa-bolt",
+        color: "text-warning",
+        label: "Challenger",
+        description: "5+ challenges completed",
+      });
+    }
+
+    if (profile.completedChallenges >= 10) {
+      badges.push({
+        icon: "fa-star",
+        color: "text-success",
+        label: "Challenge Master",
+        description: "10+ challenges completed",
       });
     }
 
