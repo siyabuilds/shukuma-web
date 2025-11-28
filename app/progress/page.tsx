@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import "@fortawesome/fontawesome-free/css/all.min.css";
+import ProgressChart, {
+  TypeDistribution,
+  StreakCalendar,
+} from "@/components/ProgressCharts";
 
 interface Exercise {
   _id: string;
@@ -267,6 +271,61 @@ export default function ProgressPage() {
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Progress Charts Section */}
+        {progress.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Weekly Activity Chart */}
+            <ProgressChart
+              data={(() => {
+                const last7Days = [];
+                const today = new Date();
+                for (let i = 6; i >= 0; i--) {
+                  const date = new Date(today);
+                  date.setDate(date.getDate() - i);
+                  const dateStr = date.toISOString().split("T")[0];
+                  const count = progress.filter(
+                    (p) => p.date.split("T")[0] === dateStr
+                  ).length;
+                  last7Days.push({ date: dateStr, count });
+                }
+                return last7Days;
+              })()}
+              title="Last 7 Days Activity"
+            />
+
+            {/* Exercise Type Distribution */}
+            <TypeDistribution
+              data={(() => {
+                const typeColors: Record<string, string> = {
+                  core: "#ff6b35",
+                  lowerbody: "#38b000",
+                  cardio: "#f9c74f",
+                  upperbody: "#4361ee",
+                };
+                const typeCounts: Record<string, number> = {};
+                progress.forEach((p) => {
+                  const type = p.exerciseId?.type || "unknown";
+                  typeCounts[type] = (typeCounts[type] || 0) + 1;
+                });
+                return Object.entries(typeCounts).map(([type, count]) => ({
+                  type,
+                  count,
+                  color: typeColors[type] || "#888",
+                }));
+              })()}
+              title="Workout Distribution"
+            />
+
+            {/* Streak Calendar - Full Width */}
+            <div className="lg:col-span-2">
+              <StreakCalendar
+                dates={progress.map((p) => p.date)}
+                title="28-Day Activity Calendar"
+              />
             </div>
           </div>
         )}
