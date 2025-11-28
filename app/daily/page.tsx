@@ -6,6 +6,7 @@ import Link from "next/link";
 import { showAlert, showConfirm } from "@/utils/swal";
 import { useTheme } from "@/contexts/ThemeContext";
 import ExerciseFlipCard from "@/components/ExerciseFlipCard";
+import DailyChallengeCard from "@/components/DailyChallengeCard";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
 interface Exercise {
@@ -261,6 +262,11 @@ export default function DailyPage() {
               day: "numeric",
             })}
           </p>
+        </div>
+
+        {/* Daily Challenge Card */}
+        <div className="mb-8">
+          <DailyChallengeCard />
         </div>
 
         {/* Exercise Card */}
