@@ -33,6 +33,7 @@ export default function Navbar() {
     { name: "Exercises", href: "/exercises" },
     { name: "Daily", href: "/daily" },
     { name: "Progress", href: "/progress" },
+    { name: "Journal", href: "/journal" },
     { name: "Community", href: "/community" },
   ];
 
