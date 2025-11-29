@@ -954,10 +954,9 @@ export default function CommunityPage() {
                 />
                 <button
                   onClick={handleSendFriendRequest}
-                  className="bg-primary text-white px-6 py-2 rounded-lg font-semibold hover:bg-primary/90 transition-colors whitespace-nowrap"
+                  className="bg-primary text-white px-4 py-4 rounded-lg font-semibold hover:bg-primary/90 transition-colors whitespace-nowrap"
                 >
-                  <i className="fas fa-user-plus mr-2"></i>
-                  Send Request
+                  <i className="fas fa-user-plus mx-auto"></i>
                 </button>
               </div>
             </div>
