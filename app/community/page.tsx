@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { showAlert } from "@/utils/swal";
+import WorkoutChallengeCard from "@/components/WorkoutChallengeCard";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
 interface User {
@@ -44,6 +45,19 @@ interface Exercise {
   name: string;
   description?: string;
   category?: string;
+  type?: string;
+  difficulty?: string;
+  duration?: number;
+  reps?: number;
+}
+
+interface ExerciseSnapshot {
+  name: string;
+  type?: string;
+  difficulty?: string;
+  duration?: number;
+  reps?: number;
+  description?: string;
 }
 
 interface Challenge {
@@ -51,9 +65,11 @@ interface Challenge {
   fromUser: User;
   toUser: User;
   exerciseId?: Exercise;
+  exerciseSnapshot?: ExerciseSnapshot;
   message?: string;
   status: "pending" | "accepted" | "declined" | "completed";
   isComplete: boolean;
+  isWorkoutAssignment?: boolean;
   durationDays: number;
   acceptedAt?: string;
   completedAt?: string;
@@ -1052,85 +1068,34 @@ export default function CommunityPage() {
         {/* Challenges Tab */}
         {activeTab === "challenges" && (
           <div className="space-y-6">
-            {/* Active Challenge Banner */}
+            {/* Active Challenge Banner - Using WorkoutChallengeCard */}
             {activeChallenge && (
-              <div className="bg-gradient-to-r from-primary/20 to-secondary/20 border-2 border-primary rounded-xl p-6">
+              <div>
                 <div className="flex items-center gap-2 mb-4">
                   <i className="fas fa-fire text-primary text-2xl animate-pulse"></i>
                   <h3 className="text-xl font-bold text-foreground">
                     Your Active Challenge
                   </h3>
                 </div>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <p className="text-foreground">
-                      <Link
-                        href={`/community/profile/${activeChallenge.fromUser.username}`}
-                        className="font-bold hover:text-primary"
-                      >
-                        {activeChallenge.fromUser.username}
-                      </Link>{" "}
-                      challenged you
-                    </p>
-                    {activeChallenge.exerciseId && (
-                      <p className="text-foreground/80 mt-1">
-                        <i className="fas fa-dumbbell mr-2"></i>
-                        Exercise:{" "}
-                        <span className="font-semibold">
-                          {activeChallenge.exerciseId.name}
-                        </span>
-                      </p>
-                    )}
-                    {activeChallenge.message && (
-                      <p className="text-sm text-foreground/60 mt-1 italic">
-                        "{activeChallenge.message}"
-                      </p>
-                    )}
-                    {activeChallenge.deadline && (
-                      <div className="mt-2">
-                        {(() => {
-                          const timeLeft = getTimeRemaining(
-                            activeChallenge.deadline
-                          );
-                          return (
-                            <span
-                              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
-                                timeLeft.expired
-                                  ? "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400"
-                                  : "bg-primary/10 text-primary"
-                              }`}
-                            >
-                              <i
-                                className={`fas ${
-                                  timeLeft.expired
-                                    ? "fa-exclamation-circle"
-                                    : "fa-clock"
-                                }`}
-                              ></i>
-                              {timeLeft.text}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleCompleteChallenge(activeChallenge._id)}
-                    className="bg-success text-white px-6 py-3 rounded-lg font-bold hover:bg-success/90 transition-colors flex items-center gap-2"
-                  >
-                    <i className="fas fa-check-circle"></i>
-                    Mark Complete
-                  </button>
-                </div>
+                <WorkoutChallengeCard
+                  challenge={activeChallenge}
+                  currentUserId={currentUserId}
+                  onComplete={handleCompleteChallenge}
+                  variant="full"
+                />
               </div>
             )}
 
             {/* Send Challenge Form */}
             <div className="bg-background border border-neutral rounded-xl p-6">
-              <h3 className="text-xl font-bold text-foreground mb-4">
-                <i className="fas fa-paper-plane mr-2 text-primary"></i>
-                Send a Challenge
+              <h3 className="text-xl font-bold text-foreground mb-2">
+                <i className="fas fa-dumbbell mr-2 text-primary"></i>
+                Assign Workout to Friend
               </h3>
+              <p className="text-foreground/60 text-sm mb-4">
+                Send a specific workout challenge to help your friend stay
+                motivated!
+              </p>
 
               {activeChallenge ? (
                 <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
@@ -1213,14 +1178,17 @@ export default function CommunityPage() {
                     {/* Exercise Selection */}
                     <div>
                       <label className="block text-sm font-semibold text-foreground mb-2">
-                        Exercise (Optional)
+                        <i className="fas fa-dumbbell mr-1 text-primary"></i>
+                        Select Workout
                       </label>
                       <select
                         value={selectedExercise}
                         onChange={(e) => setSelectedExercise(e.target.value)}
                         className="w-full p-3 border border-neutral rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                       >
-                        <option value="">Any exercise...</option>
+                        <option value="">
+                          Choose an exercise to assign...
+                        </option>
                         {exercises.map((exercise) => (
                           <option key={exercise._id} value={exercise._id}>
                             {exercise.name}{" "}
@@ -1278,8 +1246,10 @@ export default function CommunityPage() {
                         </>
                       ) : (
                         <>
-                          <i className="fas fa-trophy"></i>
-                          Send Challenge
+                          <i className="fas fa-paper-plane"></i>
+                          {selectedExercise
+                            ? "Assign Workout"
+                            : "Send Challenge"}
                         </>
                       )}
                     </button>
@@ -1301,70 +1271,22 @@ export default function CommunityPage() {
                 <div className="bg-background border border-warning rounded-xl p-6">
                   <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
                     <i className="fas fa-inbox text-warning"></i>
-                    Pending Challenges
+                    Pending Workout Challenges
                     <span className="bg-warning text-white text-sm px-2 py-1 rounded-full">
                       {pendingReceived.length}
                     </span>
                   </h3>
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {pendingReceived.map((challenge) => (
-                      <div
+                      <WorkoutChallengeCard
                         key={challenge._id}
-                        className="bg-neutral/20 rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
-                      >
-                        <div>
-                          <p className="text-foreground">
-                            <Link
-                              href={`/community/profile/${challenge.fromUser.username}`}
-                              className="font-bold hover:text-primary"
-                            >
-                              {challenge.fromUser.username}
-                            </Link>{" "}
-                            wants to challenge you!
-                          </p>
-                          {challenge.exerciseId && (
-                            <p className="text-sm text-foreground/70 mt-1">
-                              <i className="fas fa-dumbbell mr-1"></i>
-                              {challenge.exerciseId.name}
-                            </p>
-                          )}
-                          {challenge.message && (
-                            <p className="text-sm text-foreground/60 mt-1 italic">
-                              "{challenge.message}"
-                            </p>
-                          )}
-                          <p className="text-xs text-foreground/50 mt-1">
-                            Duration: {challenge.durationDays} days •{" "}
-                            {formatDate(challenge.createdAt)}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() =>
-                              handleRespondToChallenge(challenge._id, true)
-                            }
-                            disabled={!!activeChallenge}
-                            className="px-4 py-2 bg-success text-white rounded-lg font-semibold hover:bg-success/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={
-                              activeChallenge
-                                ? "Complete your current challenge first"
-                                : "Accept challenge"
-                            }
-                          >
-                            <i className="fas fa-check mr-2"></i>
-                            Accept
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleRespondToChallenge(challenge._id, false)
-                            }
-                            className="px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors"
-                          >
-                            <i className="fas fa-times mr-2"></i>
-                            Decline
-                          </button>
-                        </div>
-                      </div>
+                        challenge={challenge}
+                        currentUserId={currentUserId}
+                        onAccept={(id) => handleRespondToChallenge(id, true)}
+                        onDecline={(id) => handleRespondToChallenge(id, false)}
+                        hasActiveChallenge={!!activeChallenge}
+                        variant="full"
+                      />
                     ))}
                   </div>
                 </div>
@@ -1384,50 +1306,19 @@ export default function CommunityPage() {
                 <div className="bg-background border border-primary/50 rounded-xl p-6">
                   <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
                     <i className="fas fa-paper-plane text-primary"></i>
-                    Challenges Sent
+                    Workout Challenges Sent
                     <span className="bg-primary text-white text-sm px-2 py-1 rounded-full">
                       {pendingSent.length}
                     </span>
                   </h3>
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {pendingSent.map((challenge) => (
-                      <div
+                      <WorkoutChallengeCard
                         key={challenge._id}
-                        className="bg-neutral/20 rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
-                      >
-                        <div>
-                          <p className="text-foreground">
-                            You challenged{" "}
-                            <Link
-                              href={`/community/profile/${challenge.toUser.username}`}
-                              className="font-bold hover:text-primary"
-                            >
-                              {challenge.toUser.username}
-                            </Link>
-                          </p>
-                          {challenge.exerciseId && (
-                            <p className="text-sm text-foreground/70 mt-1">
-                              <i className="fas fa-dumbbell mr-1"></i>
-                              {challenge.exerciseId.name}
-                            </p>
-                          )}
-                          {challenge.message && (
-                            <p className="text-sm text-foreground/60 mt-1 italic">
-                              "{challenge.message}"
-                            </p>
-                          )}
-                          <p className="text-xs text-foreground/50 mt-1">
-                            Duration: {challenge.durationDays} days •{" "}
-                            {formatDate(challenge.createdAt)}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="px-3 py-1 rounded-full text-sm font-semibold bg-warning/20 text-warning">
-                            <i className="fas fa-clock mr-1"></i>
-                            Waiting for response
-                          </span>
-                        </div>
-                      </div>
+                        challenge={challenge}
+                        currentUserId={currentUserId}
+                        variant="full"
+                      />
                     ))}
                   </div>
                 </div>
@@ -1449,134 +1340,22 @@ export default function CommunityPage() {
                 <div className="text-center py-8">
                   <i className="fas fa-trophy text-foreground/30 text-4xl mb-4"></i>
                   <p className="text-foreground/70">
-                    No challenges yet. Send one to a friend!
+                    No challenges yet. Assign a workout to a friend!
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {challenges.map((challenge) => {
-                    const isSender =
-                      String(currentUserId) === String(challenge.fromUser._id);
-                    const otherUser = isSender
-                      ? challenge.toUser
-                      : challenge.fromUser;
-
-                    return (
-                      <div
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {challenges
+                    .filter((c) => c.status !== "pending") // Pending ones are shown above
+                    .map((challenge) => (
+                      <WorkoutChallengeCard
                         key={challenge._id}
-                        className={`rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                          challenge.status === "completed"
-                            ? "bg-success/10 border border-success/30"
-                            : challenge.status === "accepted"
-                            ? "bg-secondary/10 border border-secondary/30"
-                            : challenge.status === "declined"
-                            ? "bg-red-100 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30"
-                            : "bg-neutral/20 border border-neutral"
-                        }`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              challenge.status === "completed"
-                                ? "bg-success/20"
-                                : challenge.status === "accepted"
-                                ? "bg-secondary/20"
-                                : challenge.status === "declined"
-                                ? "bg-red-200 dark:bg-red-500/20"
-                                : "bg-warning/20"
-                            }`}
-                          >
-                            <i
-                              className={`fas ${
-                                challenge.status === "completed"
-                                  ? "fa-check text-success"
-                                  : challenge.status === "accepted"
-                                  ? "fa-bolt text-secondary"
-                                  : challenge.status === "declined"
-                                  ? "fa-times text-red-500"
-                                  : "fa-clock text-warning"
-                              }`}
-                            ></i>
-                          </div>
-                          <div>
-                            <p className="text-foreground">
-                              {isSender ? (
-                                <>
-                                  You challenged{" "}
-                                  <Link
-                                    href={`/community/profile/${otherUser.username}`}
-                                    className="font-bold hover:text-primary"
-                                  >
-                                    {otherUser.username}
-                                  </Link>
-                                </>
-                              ) : (
-                                <>
-                                  <Link
-                                    href={`/community/profile/${otherUser.username}`}
-                                    className="font-bold hover:text-primary"
-                                  >
-                                    {otherUser.username}
-                                  </Link>{" "}
-                                  challenged you
-                                </>
-                              )}
-                            </p>
-                            {challenge.exerciseId && (
-                              <p className="text-sm text-foreground/70">
-                                <i className="fas fa-dumbbell mr-1"></i>
-                                {challenge.exerciseId.name}
-                              </p>
-                            )}
-                            <p className="text-xs text-foreground/50 mt-1">
-                              {formatDate(challenge.createdAt)}
-                              {challenge.deadline &&
-                                challenge.status === "accepted" && (
-                                  <>
-                                    {" "}
-                                    • Deadline:{" "}
-                                    {new Date(
-                                      challenge.deadline
-                                    ).toLocaleDateString()}
-                                  </>
-                                )}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                              challenge.status === "completed"
-                                ? "bg-success/20 text-success"
-                                : challenge.status === "accepted"
-                                ? "bg-secondary/20 text-secondary"
-                                : challenge.status === "declined"
-                                ? "bg-red-200 dark:bg-red-500/20 text-red-600 dark:text-red-400"
-                                : "bg-warning/20 text-warning"
-                            }`}
-                          >
-                            {challenge.status.charAt(0).toUpperCase() +
-                              challenge.status.slice(1)}
-                          </span>
-                          {/* Show complete button for accepted challenges where user is recipient */}
-                          {challenge.status === "accepted" &&
-                            !challenge.isComplete &&
-                            String(challenge.toUser._id) ===
-                              String(currentUserId) && (
-                              <button
-                                onClick={() =>
-                                  handleCompleteChallenge(challenge._id)
-                                }
-                                className="px-3 py-1 bg-success text-white rounded-full text-sm font-semibold hover:bg-success/90 transition-colors"
-                              >
-                                <i className="fas fa-check mr-1"></i>
-                                Complete
-                              </button>
-                            )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                        challenge={challenge}
+                        currentUserId={currentUserId}
+                        onComplete={handleCompleteChallenge}
+                        variant="full"
+                      />
+                    ))}
                 </div>
               )}
             </div>

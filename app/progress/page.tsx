@@ -8,6 +8,7 @@ import ProgressChart, {
   TypeDistribution,
   StreakCalendar,
 } from "@/components/ProgressCharts";
+import StreakBadges, { BadgeNotification } from "@/components/StreakBadges";
 
 interface Exercise {
   _id: string;
@@ -33,6 +34,25 @@ interface ProgressEntry {
 interface ProgressSummary {
   totalCompleted: number;
   streak: number;
+  earnedBadges?: Array<{
+    _id: string;
+    milestone: number;
+    name: string;
+    icon: string;
+    description: string;
+    earnedAt: string;
+  }>;
+  nextMilestone?: {
+    days: number;
+    name: string;
+    icon: string;
+    description: string;
+  } | null;
+  progressToNext?: {
+    current: number;
+    target: number;
+    percentage: number;
+  } | null;
 }
 
 export default function ProgressPage() {
@@ -274,6 +294,11 @@ export default function ProgressPage() {
             </div>
           </div>
         )}
+
+        {/* Streak Badges Section */}
+        <div className="mb-8">
+          <StreakBadges />
+        </div>
 
         {/* Progress Charts Section */}
         {progress.length > 0 && (
