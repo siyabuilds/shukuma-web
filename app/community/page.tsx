@@ -79,9 +79,9 @@ interface Challenge {
 
 export default function CommunityPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"feed" | "friends" | "challenges">(
-    "feed"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "feed" | "friends" | "challenges" | "leaderboard"
+  >("feed");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
 
@@ -125,6 +125,25 @@ export default function CommunityPage() {
   const [loadingFriendsDropdown, setLoadingFriendsDropdown] = useState(false);
   const friendDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Leaderboard state
+  interface LeaderboardEntry {
+    _id: string;
+    username: string;
+    totalCards: number;
+    currentStreak: number;
+    completedChallenges: number;
+    rank: number;
+    joinedAt: string;
+  }
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [leaderboardFilter, setLeaderboardFilter] = useState<
+    "cards" | "streak" | "challenges"
+  >("cards");
+  const [currentUserRank, setCurrentUserRank] =
+    useState<LeaderboardEntry | null>(null);
+  const [totalUsers, setTotalUsers] = useState(0);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -161,6 +180,7 @@ export default function CommunityPage() {
     fetchChallenges();
     fetchExercises();
     fetchActiveChallenge();
+    fetchLeaderboard();
   }, [router]);
 
   const fetchFeed = async () => {
@@ -251,6 +271,39 @@ export default function CommunityPage() {
     } catch (err) {
       console.error("Failed to fetch active challenge:", err);
     }
+  };
+
+  const fetchLeaderboard = async (
+    filter: "cards" | "streak" | "challenges" = leaderboardFilter
+  ) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setLeaderboardLoading(true);
+    try {
+      const response = await fetch(
+        `/api/leaderboard?filter=${filter}&limit=50`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setLeaderboard(data.leaderboard);
+        setCurrentUserRank(data.currentUserRank);
+        setTotalUsers(data.totalUsers);
+      }
+    } catch (err) {
+      console.error("Failed to fetch leaderboard:", err);
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  };
+
+  const handleFilterChange = (filter: "cards" | "streak" | "challenges") => {
+    setLeaderboardFilter(filter);
+    fetchLeaderboard(filter);
   };
 
   const handleCreatePost = async () => {
@@ -745,6 +798,17 @@ export default function CommunityPage() {
             >
               <i className="fas fa-trophy mr-2"></i>
               Challenges
+            </button>
+            <button
+              onClick={() => setActiveTab("leaderboard")}
+              className={`pb-4 px-2 font-semibold transition-colors ${
+                activeTab === "leaderboard"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-foreground/60 hover:text-foreground"
+              }`}
+            >
+              <i className="fas fa-crown mr-2"></i>
+              Leaderboard
             </button>
           </div>
         </div>
@@ -1356,6 +1420,248 @@ export default function CommunityPage() {
                         variant="full"
                       />
                     ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Leaderboard Tab */}
+        {activeTab === "leaderboard" && (
+          <div className="space-y-6">
+            {/* Filter Buttons */}
+            <div className="bg-background border border-neutral rounded-xl p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-bold text-foreground mb-1">
+                    <i className="fas fa-crown text-yellow-500 mr-2"></i>
+                    Leaderboard
+                  </h3>
+                  <p className="text-foreground/60 text-sm">
+                    {totalUsers} total users competing
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleFilterChange("cards")}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      leaderboardFilter === "cards"
+                        ? "bg-primary text-white"
+                        : "bg-background border border-neutral text-foreground hover:border-primary"
+                    }`}
+                  >
+                    <i className="fas fa-clone mr-2"></i>
+                    Most Cards
+                  </button>
+                  <button
+                    onClick={() => handleFilterChange("streak")}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      leaderboardFilter === "streak"
+                        ? "bg-primary text-white"
+                        : "bg-background border border-neutral text-foreground hover:border-primary"
+                    }`}
+                  >
+                    <i className="fas fa-fire mr-2"></i>
+                    Streak
+                  </button>
+                  <button
+                    onClick={() => handleFilterChange("challenges")}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      leaderboardFilter === "challenges"
+                        ? "bg-primary text-white"
+                        : "bg-background border border-neutral text-foreground hover:border-primary"
+                    }`}
+                  >
+                    <i className="fas fa-flag-checkered mr-2"></i>
+                    Challenges
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Current User's Rank (if not in top) */}
+            {currentUserRank &&
+              !leaderboard.find((e) => e._id === currentUserRank._id) && (
+                <div className="bg-primary/10 border border-primary rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
+                        #{currentUserRank.rank}
+                      </div>
+                      <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white text-xl font-bold">
+                        {currentUserRank.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">
+                          {currentUserRank.username}{" "}
+                          <span className="text-primary">(You)</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-6 text-sm">
+                      <div className="text-center">
+                        <p
+                          className={`font-bold text-lg ${
+                            leaderboardFilter === "cards"
+                              ? "text-primary"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {currentUserRank.totalCards}
+                        </p>
+                        <p className="text-foreground/60">Cards</p>
+                      </div>
+                      <div className="text-center">
+                        <p
+                          className={`font-bold text-lg ${
+                            leaderboardFilter === "streak"
+                              ? "text-primary"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {currentUserRank.currentStreak}
+                        </p>
+                        <p className="text-foreground/60">Streak</p>
+                      </div>
+                      <div className="text-center">
+                        <p
+                          className={`font-bold text-lg ${
+                            leaderboardFilter === "challenges"
+                              ? "text-primary"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {currentUserRank.completedChallenges}
+                        </p>
+                        <p className="text-foreground/60">Challenges</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            {/* Leaderboard List */}
+            <div className="bg-background border border-neutral rounded-xl overflow-hidden">
+              {leaderboardLoading ? (
+                <div className="text-center py-12">
+                  <i className="fas fa-circle-notch fa-spin text-primary text-4xl"></i>
+                </div>
+              ) : leaderboard.length === 0 ? (
+                <div className="text-center py-12">
+                  <i className="fas fa-crown text-foreground/30 text-6xl mb-4"></i>
+                  <p className="text-foreground/70">No leaderboard data yet</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-neutral">
+                  {leaderboard.map((entry, index) => {
+                    const isCurrentUser = entry._id === currentUserId;
+                    const isTopThree = entry.rank <= 3;
+                    const rankColors: { [key: number]: string } = {
+                      1: "bg-yellow-500 text-white",
+                      2: "bg-gray-400 text-white",
+                      3: "bg-amber-600 text-white",
+                    };
+                    const rankIcons: { [key: number]: string } = {
+                      1: "fa-crown",
+                      2: "fa-medal",
+                      3: "fa-award",
+                    };
+
+                    return (
+                      <div
+                        key={entry._id}
+                        className={`flex items-center justify-between p-4 transition-colors hover:bg-foreground/5 ${
+                          isCurrentUser ? "bg-primary/5" : ""
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          {/* Rank */}
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                              isTopThree
+                                ? rankColors[entry.rank]
+                                : "bg-foreground/10 text-foreground"
+                            }`}
+                          >
+                            {isTopThree ? (
+                              <i className={`fas ${rankIcons[entry.rank]}`}></i>
+                            ) : (
+                              entry.rank
+                            )}
+                          </div>
+
+                          {/* Avatar */}
+                          <div
+                            className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold ${
+                              isCurrentUser ? "bg-primary" : "bg-secondary"
+                            }`}
+                          >
+                            {entry.username.charAt(0).toUpperCase()}
+                          </div>
+
+                          {/* Username */}
+                          <div>
+                            <Link
+                              href={`/community/profile/${entry.username}`}
+                              className="font-semibold text-foreground hover:text-primary transition-colors"
+                            >
+                              {entry.username}
+                              {isCurrentUser && (
+                                <span className="ml-2 text-primary text-sm">
+                                  (You)
+                                </span>
+                              )}
+                            </Link>
+                          </div>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="flex gap-6 text-sm">
+                          <div className="text-center min-w-[60px]">
+                            <p
+                              className={`font-bold text-lg ${
+                                leaderboardFilter === "cards"
+                                  ? "text-primary"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {entry.totalCards}
+                            </p>
+                            <p className="text-foreground/60 text-xs">Cards</p>
+                          </div>
+                          <div className="text-center min-w-[60px]">
+                            <p
+                              className={`font-bold text-lg ${
+                                leaderboardFilter === "streak"
+                                  ? "text-primary"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {entry.currentStreak}
+                              {entry.currentStreak > 0 && (
+                                <i className="fas fa-fire text-orange-500 ml-1 text-sm"></i>
+                              )}
+                            </p>
+                            <p className="text-foreground/60 text-xs">Streak</p>
+                          </div>
+                          <div className="text-center min-w-[60px]">
+                            <p
+                              className={`font-bold text-lg ${
+                                leaderboardFilter === "challenges"
+                                  ? "text-primary"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {entry.completedChallenges}
+                            </p>
+                            <p className="text-foreground/60 text-xs">
+                              Challenges
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
