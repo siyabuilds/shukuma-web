@@ -769,10 +769,10 @@ export default function CommunityPage() {
 
         {/* Tabs */}
         <div className="border-b border-neutral mb-8">
-          <div className="flex gap-6">
+          <div className="grid grid-cols-2 gap-4 md:flex md:gap-6">
             <button
               onClick={() => setActiveTab("feed")}
-              className={`pb-4 px-2 font-semibold transition-colors ${
+              className={`pb-4 px-2 font-semibold transition-colors text-center md:text-left ${
                 activeTab === "feed"
                   ? "text-primary border-b-2 border-primary"
                   : "text-foreground/60 hover:text-foreground"
@@ -783,7 +783,7 @@ export default function CommunityPage() {
             </button>
             <button
               onClick={() => setActiveTab("friends")}
-              className={`pb-4 px-2 font-semibold transition-colors ${
+              className={`pb-4 px-2 font-semibold transition-colors text-center md:text-left ${
                 activeTab === "friends"
                   ? "text-primary border-b-2 border-primary"
                   : "text-foreground/60 hover:text-foreground"
@@ -794,7 +794,7 @@ export default function CommunityPage() {
             </button>
             <button
               onClick={() => setActiveTab("challenges")}
-              className={`pb-4 px-2 font-semibold transition-colors ${
+              className={`pb-4 px-2 font-semibold transition-colors text-center md:text-left ${
                 activeTab === "challenges"
                   ? "text-primary border-b-2 border-primary"
                   : "text-foreground/60 hover:text-foreground"
@@ -805,7 +805,7 @@ export default function CommunityPage() {
             </button>
             <button
               onClick={() => setActiveTab("leaderboard")}
-              className={`pb-4 px-2 font-semibold transition-colors ${
+              className={`pb-4 px-2 font-semibold transition-colors text-center md:text-left ${
                 activeTab === "leaderboard"
                   ? "text-primary border-b-2 border-primary"
                   : "text-foreground/60 hover:text-foreground"
@@ -1446,7 +1446,7 @@ export default function CommunityPage() {
                   </p>
                 </div>
                 {/* Filter Buttons */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => handleLeaderboardFilterChange("cards")}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -1491,7 +1491,7 @@ export default function CommunityPage() {
                   <i className="fas fa-user mr-2"></i>
                   Your Ranking
                 </h3>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xl">
                       #{leaderboardData.currentUserRank.rank}

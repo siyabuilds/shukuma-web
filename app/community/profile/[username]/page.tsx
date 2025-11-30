@@ -328,18 +328,18 @@ export default function ProfilePage({
         {/* Profile Header */}
         <div className="bg-background border border-neutral rounded-2xl p-8 mb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
               <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
                 <i className="fas fa-user text-primary text-4xl"></i>
               </div>
-              <div>
+              <div className="text-center sm:text-left">
                 <h1 className="text-4xl font-bold text-foreground mb-2">
                   {profile.user.username}
                 </h1>
                 <p className="text-foreground/60 text-lg mb-2">
                   {profile.user.email}
                 </p>
-                <div className="flex items-center gap-4 text-sm text-foreground/70">
+                <div className="flex items-center justify-center sm:justify-start gap-4 text-sm text-foreground/70">
                   <span>
                     <i className="fas fa-user-friends mr-2 text-secondary"></i>
                     {profile.friendCount} Friends
