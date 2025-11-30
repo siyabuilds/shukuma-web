@@ -34,6 +34,7 @@ export default function Navbar() {
     { name: "Daily", href: "/daily" },
     { name: "Progress", href: "/progress" },
     { name: "Journal", href: "/journal" },
+    { name: "White Noise", href: "/white-noise" },
     { name: "Community", href: "/community" },
   ];
 
