@@ -77,11 +77,28 @@ interface Challenge {
   createdAt: string;
 }
 
+interface LeaderboardEntry {
+  _id: string;
+  username: string;
+  totalCards: number;
+  currentStreak: number;
+  completedChallenges: number;
+  rank: number;
+  joinedAt: string;
+}
+
+interface LeaderboardData {
+  leaderboard: LeaderboardEntry[];
+  currentUserRank: LeaderboardEntry | null;
+  filter: string;
+  totalUsers: number;
+}
+
 export default function CommunityPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"feed" | "friends" | "challenges">(
-    "feed"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "feed" | "friends" | "challenges" | "leaderboard"
+  >("feed");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
 
@@ -125,6 +142,14 @@ export default function CommunityPage() {
   const [loadingFriendsDropdown, setLoadingFriendsDropdown] = useState(false);
   const friendDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Leaderboard state
+  const [leaderboardData, setLeaderboardData] =
+    useState<LeaderboardData | null>(null);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [leaderboardFilter, setLeaderboardFilter] = useState<
+    "cards" | "streak" | "challenges"
+  >("cards");
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -161,6 +186,7 @@ export default function CommunityPage() {
     fetchChallenges();
     fetchExercises();
     fetchActiveChallenge();
+    fetchLeaderboard();
   }, [router]);
 
   const fetchFeed = async () => {
@@ -251,6 +277,37 @@ export default function CommunityPage() {
     } catch (err) {
       console.error("Failed to fetch active challenge:", err);
     }
+  };
+
+  const fetchLeaderboard = async (filter: string = leaderboardFilter) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setLeaderboardLoading(true);
+    try {
+      const response = await fetch(
+        `/api/leaderboard?filter=${filter}&limit=20`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setLeaderboardData(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch leaderboard:", err);
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  };
+
+  const handleLeaderboardFilterChange = (
+    filter: "cards" | "streak" | "challenges"
+  ) => {
+    setLeaderboardFilter(filter);
+    fetchLeaderboard(filter);
   };
 
   const handleCreatePost = async () => {
@@ -745,6 +802,17 @@ export default function CommunityPage() {
             >
               <i className="fas fa-trophy mr-2"></i>
               Challenges
+            </button>
+            <button
+              onClick={() => setActiveTab("leaderboard")}
+              className={`pb-4 px-2 font-semibold transition-colors ${
+                activeTab === "leaderboard"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-foreground/60 hover:text-foreground"
+              }`}
+            >
+              <i className="fas fa-medal mr-2"></i>
+              Leaderboard
             </button>
           </div>
         </div>
@@ -1357,6 +1425,237 @@ export default function CommunityPage() {
                       />
                     ))}
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Leaderboard Tab */}
+        {activeTab === "leaderboard" && (
+          <div className="space-y-6">
+            {/* Leaderboard Header */}
+            <div className="bg-background border border-neutral rounded-xl p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                    <i className="fas fa-medal text-yellow-500"></i>
+                    Leaderboard
+                  </h2>
+                  <p className="text-foreground/70 mt-1">
+                    {leaderboardData?.totalUsers || 0} total users competing
+                  </p>
+                </div>
+                {/* Filter Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleLeaderboardFilterChange("cards")}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      leaderboardFilter === "cards"
+                        ? "bg-primary text-white"
+                        : "bg-neutral text-foreground hover:bg-neutral/80"
+                    }`}
+                  >
+                    <i className="fas fa-layer-group mr-2"></i>
+                    Cards
+                  </button>
+                  <button
+                    onClick={() => handleLeaderboardFilterChange("streak")}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      leaderboardFilter === "streak"
+                        ? "bg-primary text-white"
+                        : "bg-neutral text-foreground hover:bg-neutral/80"
+                    }`}
+                  >
+                    <i className="fas fa-fire mr-2"></i>
+                    Streak
+                  </button>
+                  <button
+                    onClick={() => handleLeaderboardFilterChange("challenges")}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      leaderboardFilter === "challenges"
+                        ? "bg-primary text-white"
+                        : "bg-neutral text-foreground hover:bg-neutral/80"
+                    }`}
+                  >
+                    <i className="fas fa-trophy mr-2"></i>
+                    Challenges
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Current User Rank Card */}
+            {leaderboardData?.currentUserRank && (
+              <div className="bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary rounded-xl p-6">
+                <h3 className="text-lg font-bold text-foreground mb-3">
+                  <i className="fas fa-user mr-2"></i>
+                  Your Ranking
+                </h3>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xl">
+                      #{leaderboardData.currentUserRank.rank}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {leaderboardData.currentUserRank.username}
+                      </p>
+                      <p className="text-sm text-foreground/60">
+                        Joined{" "}
+                        {new Date(
+                          leaderboardData.currentUserRank.joinedAt
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-6 text-center">
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">
+                        {leaderboardData.currentUserRank.totalCards}
+                      </p>
+                      <p className="text-xs text-foreground/60">Cards</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-orange-500">
+                        {leaderboardData.currentUserRank.currentStreak}
+                      </p>
+                      <p className="text-xs text-foreground/60">Streak</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-yellow-500">
+                        {leaderboardData.currentUserRank.completedChallenges}
+                      </p>
+                      <p className="text-xs text-foreground/60">Challenges</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Leaderboard Table */}
+            <div className="bg-background border border-neutral rounded-xl overflow-hidden">
+              {leaderboardLoading ? (
+                <div className="text-center py-12">
+                  <i className="fas fa-circle-notch fa-spin text-primary text-4xl"></i>
+                  <p className="text-foreground/70 mt-4">
+                    Loading leaderboard...
+                  </p>
+                </div>
+              ) : !leaderboardData ||
+                leaderboardData.leaderboard.length === 0 ? (
+                <div className="text-center py-12">
+                  <i className="fas fa-medal text-foreground/30 text-4xl"></i>
+                  <p className="text-foreground/70 mt-4">
+                    No leaderboard data yet
+                  </p>
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead className="bg-neutral/50">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                        Rank
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                        User
+                      </th>
+                      <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
+                        <i className="fas fa-layer-group mr-1"></i> Cards
+                      </th>
+                      <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
+                        <i className="fas fa-fire mr-1 text-orange-500"></i>{" "}
+                        Streak
+                      </th>
+                      <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
+                        <i className="fas fa-trophy mr-1 text-yellow-500"></i>{" "}
+                        Challenges
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral">
+                    {leaderboardData.leaderboard.map((entry, index) => (
+                      <tr
+                        key={entry._id}
+                        className={`hover:bg-neutral/30 transition-colors ${
+                          entry._id === currentUserId ? "bg-primary/10" : ""
+                        }`}
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {entry.rank === 1 && (
+                              <span className="text-2xl">🥇</span>
+                            )}
+                            {entry.rank === 2 && (
+                              <span className="text-2xl">🥈</span>
+                            )}
+                            {entry.rank === 3 && (
+                              <span className="text-2xl">🥉</span>
+                            )}
+                            {entry.rank > 3 && (
+                              <span className="text-lg font-bold text-foreground/70">
+                                #{entry.rank}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Link
+                            href={`/community/profile/${entry.username}`}
+                            className="flex items-center gap-3 hover:text-primary transition-colors"
+                          >
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold">
+                              {entry.username.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-medium text-foreground">
+                              {entry.username}
+                              {entry._id === currentUserId && (
+                                <span className="ml-2 text-xs bg-primary text-white px-2 py-0.5 rounded-full">
+                                  You
+                                </span>
+                              )}
+                            </span>
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span
+                            className={`font-semibold ${
+                              leaderboardFilter === "cards"
+                                ? "text-primary"
+                                : "text-foreground"
+                            }`}
+                          >
+                            {entry.totalCards}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span
+                            className={`font-semibold ${
+                              leaderboardFilter === "streak"
+                                ? "text-orange-500"
+                                : "text-foreground"
+                            }`}
+                          >
+                            {entry.currentStreak}
+                            {entry.currentStreak > 0 && (
+                              <i className="fas fa-fire ml-1 text-orange-500"></i>
+                            )}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span
+                            className={`font-semibold ${
+                              leaderboardFilter === "challenges"
+                                ? "text-yellow-500"
+                                : "text-foreground"
+                            }`}
+                          >
+                            {entry.completedChallenges}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>
