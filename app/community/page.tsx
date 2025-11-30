@@ -1466,7 +1466,7 @@ export default function CommunityPage() {
                         : "bg-neutral text-foreground hover:bg-neutral/80"
                     }`}
                   >
-                    <i className="fas fa-fire mr-2"></i>
+                    <i className="fas fa-fire mr-2 text-orange-500"></i>
                     Streak
                   </button>
                   <button
@@ -1477,7 +1477,7 @@ export default function CommunityPage() {
                         : "bg-neutral text-foreground hover:bg-neutral/80"
                     }`}
                   >
-                    <i className="fas fa-trophy mr-2"></i>
+                    <i className="fas fa-trophy mr-2 text-yellow-500"></i>{" "}
                     Challenges
                   </button>
                 </div>
@@ -1550,112 +1550,106 @@ export default function CommunityPage() {
                   </p>
                 </div>
               ) : (
-                <table className="w-full">
-                  <thead className="bg-neutral/50">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
-                        Rank
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
-                        User
-                      </th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
-                        <i className="fas fa-layer-group mr-1"></i> Cards
-                      </th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
-                        <i className="fas fa-fire mr-1 text-orange-500"></i>{" "}
-                        Streak
-                      </th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
-                        <i className="fas fa-trophy mr-1 text-yellow-500"></i>{" "}
-                        Challenges
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral">
-                    {leaderboardData.leaderboard.map((entry, index) => (
-                      <tr
-                        key={entry._id}
-                        className={`hover:bg-neutral/30 transition-colors ${
-                          entry._id === currentUserId ? "bg-primary/10" : ""
-                        }`}
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            {entry.rank === 1 && (
-                              <span className="text-2xl">🥇</span>
-                            )}
-                            {entry.rank === 2 && (
-                              <span className="text-2xl">🥈</span>
-                            )}
-                            {entry.rank === 3 && (
-                              <span className="text-2xl">🥉</span>
-                            )}
-                            {entry.rank > 3 && (
-                              <span className="text-lg font-bold text-foreground/70">
-                                #{entry.rank}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Link
-                            href={`/community/profile/${entry.username}`}
-                            className="flex items-center gap-3 hover:text-primary transition-colors"
-                          >
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold">
-                              {entry.username.charAt(0).toUpperCase()}
-                            </div>
-                            <span className="font-medium text-foreground">
-                              {entry.username}
-                              {entry._id === currentUserId && (
-                                <span className="ml-2 text-xs bg-primary text-white px-2 py-0.5 rounded-full">
-                                  You
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-neutral/50">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-semibold text-foreground">
+                          Rank
+                        </th>
+                        <th className="px-4 py-2 text-left font-semibold text-foreground">
+                          User
+                        </th>
+                        <th className="px-4 py-2 text-center font-semibold text-foreground">
+                          {leaderboardFilter === "cards" && (
+                            <>
+                              <i className="fas fa-layer-group mr-1"></i> Cards
+                            </>
+                          )}
+                          {leaderboardFilter === "streak" && (
+                            <>
+                              <i className="fas fa-fire mr-1 text-orange-500"></i>{" "}
+                              Streak
+                            </>
+                          )}
+                          {leaderboardFilter === "challenges" && (
+                            <>
+                              <i className="fas fa-trophy mr-1 text-yellow-500"></i>{" "}
+                              Challenges
+                            </>
+                          )}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral">
+                      {leaderboardData.leaderboard.map((entry, index) => (
+                        <tr
+                          key={entry._id}
+                          className={`hover:bg-neutral/30 transition-colors ${
+                            entry._id === currentUserId ? "bg-primary/10" : ""
+                          }`}
+                        >
+                          <td className="px-4 py-2">
+                            <div className="flex items-center gap-2">
+                              {entry.rank === 1 && (
+                                <span className="text-2xl">🥇</span>
+                              )}
+                              {entry.rank === 2 && (
+                                <span className="text-2xl">🥈</span>
+                              )}
+                              {entry.rank === 3 && (
+                                <span className="text-2xl">🥉</span>
+                              )}
+                              {entry.rank > 3 && (
+                                <span className="text-lg font-bold text-foreground/70">
+                                  #{entry.rank}
                                 </span>
                               )}
-                            </span>
-                          </Link>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span
-                            className={`font-semibold ${
-                              leaderboardFilter === "cards"
-                                ? "text-primary"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {entry.totalCards}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span
-                            className={`font-semibold ${
-                              leaderboardFilter === "streak"
-                                ? "text-orange-500"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {entry.currentStreak}
-                            {entry.currentStreak > 0 && (
-                              <i className="fas fa-fire ml-1 text-orange-500"></i>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2">
+                            <Link
+                              href={`/community/profile/${entry.username}`}
+                              className="flex items-center gap-3 hover:text-primary transition-colors"
+                            >
+                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold">
+                                {entry.username.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="font-medium text-foreground">
+                                {entry.username}
+                                {entry._id === currentUserId && (
+                                  <span className="ml-2 text-xs bg-primary text-white px-2 py-0.5 rounded-full">
+                                    You
+                                  </span>
+                                )}
+                              </span>
+                            </Link>
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            {leaderboardFilter === "cards" && (
+                              <span className="font-semibold text-primary">
+                                {entry.totalCards}
+                              </span>
                             )}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span
-                            className={`font-semibold ${
-                              leaderboardFilter === "challenges"
-                                ? "text-yellow-500"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {entry.completedChallenges}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            {leaderboardFilter === "streak" && (
+                              <span className="font-semibold text-orange-500">
+                                {entry.currentStreak}
+                                {entry.currentStreak > 0 && (
+                                  <i className="fas fa-fire ml-1 text-orange-500"></i>
+                                )}
+                              </span>
+                            )}
+                            {leaderboardFilter === "challenges" && (
+                              <span className="font-semibold text-yellow-500">
+                                {entry.completedChallenges}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </div>
