@@ -50,14 +50,6 @@ export default function Footer() {
           </a>
         </div>
 
-        {/* Center: Buy Me Coffee Button */}
-        <button
-          onClick={handleCoffeeClick}
-          className="px-4 py-2 bg-warning hover:bg-primary text-white rounded-full text-sm font-medium transition-all duration-300 hover:shadow-lg active:scale-95 flex items-center gap-2"
-        >
-          <i className="fas fa-coffee"></i> Buy Me a Coffee
-        </button>
-
         {/* Right: Theme Toggle */}
         <div>
           <ThemeToggle />
